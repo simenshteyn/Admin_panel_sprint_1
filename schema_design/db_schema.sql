@@ -11,20 +11,23 @@ CREATE TABLE IF NOT EXISTS content.movies (
     movie_id        uuid        PRIMARY KEY,
     movie_title     text        NOT NULL,
     movie_desc      text,
-    movie_rating    decimal(2, 1)
+    movie_rating    decimal(2, 1),
+    UNIQUE (movie_title, movie_desc, movie_rating)
 );
 
 CREATE TABLE IF NOT EXISTS content.people (
     person_id       uuid        PRIMARY KEY,
     full_name       text        NOT NULL,
-    birthday        date
+    birthday        date,
+    UNIQUE (full_name, birthday)
 );
 
 CREATE TABLE IF NOT EXISTS content.movie_people (
     movie_people_id uuid        PRIMARY KEY,
     movie_id        uuid        NOT NULL,
     person_id       uuid        NOT NULL,
-    person_role     person_role
+    person_role     person_role,
+    UNIQUE (movie_id, person_id, person_role)
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (
@@ -36,7 +39,8 @@ CREATE TABLE IF NOT EXISTS content.genres (
 CREATE TABLE IF NOT EXISTS content.movie_genres (
     movie_genres_id uuid        PRIMARY KEY,
     movie_id        uuid        NOT NULL,
-    genre_id        uuid        NOT NULL
+    genre_id        uuid        NOT NULL,
+    UNIQUE (movie_id, genre_id)
 );
 
 ALTER TABLE content.movie_people
