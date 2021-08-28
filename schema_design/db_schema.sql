@@ -1,7 +1,7 @@
 -- Schema for content. Diagram at: https://dbdiagram.io/d/612718116dc2bb6073bbe779
 CREATE SCHEMA IF NOT EXISTS content;
 
-CREATE TYPE person_role AS ENUM (
+CREATE TYPE content.person_role AS ENUM (
     'actor',
     'director',
     'writer'
@@ -40,7 +40,8 @@ CREATE TABLE IF NOT EXISTS content.movie_people (
     movie_people_id uuid        PRIMARY KEY,
     movie_id        uuid        NOT NULL,
     person_id       uuid        NOT NULL,
-    person_role     person_role,
+    person_role     content.person_role
+                                NOT NULL,
      UNIQUE (movie_id, person_id, person_role),
     FOREIGN KEY (movie_id)
             REFERENCES content.movies(movie_id)
