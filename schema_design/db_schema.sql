@@ -13,20 +13,27 @@ CREATE TABLE IF NOT EXISTS content.movies (
     movie_desc      text,
     movie_rating    numeric(2, 1)
                     CHECK (movie_rating BETWEEN 0 AND 10),
+    created_at      datetime    DEFAULT (now()),
+    updated_at      datetime,
     UNIQUE (movie_title, movie_desc, movie_rating)
 );
 
 CREATE TABLE IF NOT EXISTS content.people (
     person_id       uuid        PRIMARY KEY,
     full_name       text        NOT NULL,
+    person_desc     text,
     birthday        date,
+    created_at      datetime    DEFAULT (now()),
+    updated_at      datetime,
     UNIQUE (full_name, birthday)
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (
     genre_id        uuid        PRIMARY KEY,
     genre_name      text        UNIQUE NOT NULL,
-    genre_desc      text
+    genre_desc      text,
+    created_at      datetime    DEFAULT (now()),
+    updated_at      datetime,
 );
 
 CREATE TABLE IF NOT EXISTS content.movie_people (
