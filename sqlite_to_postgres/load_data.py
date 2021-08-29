@@ -148,6 +148,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                                       FROM movies AS m
                                       JOIN writers AS w
                                         ON m.writer = w.id
+                                           OR m.writers LIKE '%'||w.id||'%'
                                      WHERE NOT (w.name = 'N/A')
                                      ORDER BY w.name
                                   """)
@@ -159,22 +160,11 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                 yield writers_list
 
 
-
-
     loader = SQLiteLoader(sqlite_conn)
-    # loader.load_actors()
-    # loader.load_writers()
-    # loader.load_directors()
-    # loader.load_movies()
-    # loader.load_genres()
-    # loader.load_movie_genres()
-    # movie_genres = loader.load_movie_genres()
-    # for movie_genre in movie_genres:
-    #     print(movie_genre)
+
     movie_writers= loader.load_movie_writers()
     for m in movie_writers:
         print(m)
-
 
 
 
