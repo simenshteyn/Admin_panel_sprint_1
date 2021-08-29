@@ -8,28 +8,28 @@ CREATE TYPE content.person_role AS ENUM (
 );
 
 CREATE TABLE IF NOT EXISTS content.movies (
-    movie_id        uuid        PRIMARY KEY,
+    movie_id        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     movie_title     text        NOT NULL,
     movie_desc      text,
     movie_rating    numeric(2, 1)
                     CHECK (movie_rating BETWEEN 0 AND 10),
     created_at      timestamp    DEFAULT (now()),
     updated_at      timestamp,
-    UNIQUE (movie_title, movie_desc, movie_rating)
+    UNIQUE (movie_title)
 );
 
 CREATE TABLE IF NOT EXISTS content.people (
-    person_id       uuid        PRIMARY KEY,
+    person_id       uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     full_name       text        NOT NULL,
     person_desc     text,
     birthday        date,
     created_at      timestamp    DEFAULT (now()),
     updated_at      timestamp,
-    UNIQUE (full_name, birthday)
+    UNIQUE (full_name)
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (
-    genre_id        uuid        PRIMARY KEY,
+    genre_id        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     genre_name      text        UNIQUE NOT NULL,
     genre_desc      text,
     created_at      timestamp   DEFAULT (now()),
@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS content.genres (
 );
 
 CREATE TABLE IF NOT EXISTS content.movie_people (
-    movie_people_id uuid        PRIMARY KEY,
+    movie_people_id uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     movie_id        uuid        NOT NULL,
     person_id       uuid        NOT NULL,
     person_role     content.person_role
@@ -54,7 +54,7 @@ CREATE TABLE IF NOT EXISTS content.movie_people (
 );
 
 CREATE TABLE IF NOT EXISTS content.movie_genres (
-    movie_genres_id uuid        PRIMARY KEY,
+    movie_genres_id uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     movie_id        uuid        NOT NULL,
     genre_id        uuid        NOT NULL,
      UNIQUE (movie_id, genre_id),

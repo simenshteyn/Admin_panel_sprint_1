@@ -3,10 +3,14 @@ import sqlite3
 import logging
 import time
 from functools import wraps
+import uuid
 
 import psycopg2
 from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
+psycopg2.extras.register_uuid()
+
+
 
 
 def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
@@ -43,52 +47,52 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
         @timed
         def load_actors(self, chunk_size=500):
             curs = self.__connection.cursor()
-            result = curs.execute("""SELECT name
+            query = curs.execute("""SELECT name
                                        FROM actors
                                       ORDER BY name
                                   """)
-            while (actors_list := result.fetchmany(chunk_size)):
+            while (actors_list := query.fetchmany(chunk_size)):
                 yield actors_list
 
         @timed
         def load_writers(self, chunk_size=500):
             curs = self.__connection.cursor()
-            result = curs.execute("""SELECT name
+            query = curs.execute("""SELECT name
                                        FROM writers
                                       ORDER BY name
                                   """)
-            while (writers_list := result.fetchmany(chunk_size)):
+            while (writers_list := query.fetchmany(chunk_size)):
                 yield writers_list
 
         @timed
         def load_directors(self, chunk_size=500):
             curs = self.__connection.cursor()
-            result = curs.execute("""SELECT director
+            query = curs.execute("""SELECT director
                                        FROM movies
                                       WHERE NOT (director='N/A')
                                       ORDER BY director
                                   """)
-            while (directors_list := result.fetchmany(chunk_size)):
+            while (directors_list := query.fetchmany(chunk_size)):
                 yield directors_list
 
         @timed
         def load_movies(self, chunk_size=100):
             curs = self.__connection.cursor()
-            result = curs.execute("""SELECT title, plot, imdb_rating
+            query = curs.execute("""SELECT title, plot, imdb_rating
                                        FROM movies
                                       ORDER BY title
                                   """)
-            while (movies_list := result.fetchmany(chunk_size)):
+            while (movies_list := query.fetchmany(chunk_size)):
                 yield movies_list
 
         @timed
         def load_genres(self):
             curs = self.__connection.cursor()
-            result = curs.execute("""SELECT DISTINCT genre
+            query = curs.execute("""SELECT DISTINCT genre
                                        FROM movies
                                       ORDER BY genre
                                   """)
-            dirty_genres_list = result.fetchall()
+            dirty_genres_list = query.fetchall()
             result_set = set()
             for genre_tuple in dirty_genres_list:
                 for genre in (genre_tuple[0].split(', ')):
@@ -160,11 +164,45 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                 yield writers_list
 
 
-    loader = SQLiteLoader(sqlite_conn)
+    class PostgresSaver:
+        def __init__(self, pg_conn: _connection):
+            self.__connection = pg_conn
 
-    movie_writers= loader.load_movie_writers()
-    for m in movie_writers:
-        print(m)
+        @timed
+        def save_people(self, data):
+            curs = self.__connection.cursor()
+            args = ','.join(curs.mogrify("(%s)",
+                                         item).decode() for item in data)
+            try:
+                curs.execute(f"""INSERT INTO content.people (full_name)
+                                 VALUES {args}
+                                 ON CONFLICT DO NOTHING
+                              """)
+            except Exception as e:
+                logger.debug(f'Error {e}')
+
+        def save_genres(self):
+            pass
+
+        def save_movies(self):
+            pass
+
+        def save_movie_genres(self):
+            pass
+
+        def save_movie_people(self):
+            pass
+
+    loader = SQLiteLoader(sqlite_conn)
+    saver = PostgresSaver(pg_conn)
+
+    for actor in (actors := loader.load_actors()):
+        saver.save_people(actor)
+    for director in (directors := loader.load_directors()):
+        saver.save_people(director)
+
+
+
 
 
 
