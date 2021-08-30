@@ -9,32 +9,34 @@ from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
 
 
+def logger_init():
+    """Start logging for debug and measure performance."""
+    logger = logging.getLogger(__name__)
+    logger.setLevel('DEBUG')
+    handler = logging.StreamHandler()
+    log_format = '%(asctime)s %(levelname)s -- %(message)s'
+    formatter = logging.Formatter(log_format)
+    handler.setFormatter(formatter)
+    logger.addHandler(handler)
+    return logger
+
+logger = logger_init()
+
+def timed(func):
+    """Decorator @timed prints execution time for given function."""
+    @wraps(func)
+    def wrapper(*args, **kwargs):
+        start = time.time()
+        result = func(*args, *kwargs)
+        end = time.time()
+        logger.debug('{} ran in {}s'.format(func.__name__,
+                                            round(end - start, 2)))
+        return result
+
+    return wrapper
+
+@timed
 def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
-
-    def logger_init():
-        logger = logging.getLogger(__name__)
-        logger.setLevel('DEBUG')
-        handler = logging.StreamHandler()
-        log_format = '%(asctime)s %(levelname)s -- %(message)s'
-        formatter = logging.Formatter(log_format)
-        handler.setFormatter(formatter)
-        logger.addHandler(handler)
-        return logger
-
-    logger = logger_init()
-
-    def timed(func):
-        """Prints execution time for given function."""
-
-        @wraps(func)
-        def wrapper(*args, **kwargs):
-            start = time.time()
-            result = func(*args, *kwargs)
-            end = time.time()
-            logger.debug('{} ran in {}s'.format(func.__name__,
-                                                round(end - start, 2)))
-            return result
-        return wrapper
 
     class SQLiteLoader:
         def __init__(self, connection: sqlite3.Connection):
@@ -241,7 +243,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             finally:
                 curs.close()
 
-
+        @timed
         def save_movie_genres(self, data):
             curs = self.__connection.cursor()
             args = ','.join(curs.mogrify("(%s, %s)",
@@ -274,36 +276,93 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             finally:
                 curs.close()
 
+        @timed
+        def save_movie_people(self, data):
+            curs = self.__connection.cursor()
+            args = ','.join(curs.mogrify("(%s, %s, %s)",
+                                         item).decode() for item in data)
+            try:
+                curs.execute(f"""CREATE TABLE IF NOT EXISTS content.mp_tmp (
+                                     person_name    text,
+                                     movie_title    text,
+                                     person_role    content.person_role,
+                                     UNIQUE (movie_title,
+                                             person_name,
+                                             person_role)
+                                 )
+                              """)
+                curs.execute(f"""INSERT INTO content.mp_tmp
+                                 VALUES {args}
+                                     ON CONFLICT DO NOTHING
+                              """)
+                curs.execute(f"""INSERT INTO 
+                                        content.movie_people(
+                                            movie_id,                      
+                                            person_id,
+                                            person_role)
+                                 SELECT m.movie_id, p.person_id, t.person_role
+                                   FROM content.mp_tmp AS t
+                                   JOIN content.people AS p
+                                     ON p.full_name = t.person_name
+                                   JOIN content.movies AS m
+                                     ON m.movie_title = t.movie_title
+                                  ORDER BY m.movie_title
+                                     ON CONFLICT DO NOTHING
+                              """)
+                curs.execute(f"""DROP TABLE content.mp_tmp""")
+            except Exception as e:
+                logger.debug(f'Error {e}')
+            finally:
+                curs.close()
+
+
+    class DatabaseMigrator:
+        def __init__(self, loader: SQLiteLoader, saver: PostgresSaver):
+            self.__loader = loader
+            self.__saver = saver
+
+        def save_people(self):
+            for actor in (actors := self.__loader.load_actors()):
+                self.__saver.save_people(actor)
+            for director in (directors := self.__loader.load_directors()):
+                self.__saver.save_people(director)
+            for writer in (writers := self.__loader.load_writers()):
+                self.__saver.save_people(writer)
+
+        def save_genres(self):
+            self.__saver.save_genres(genres := self.__loader.load_genres())
+
+        def save_movies(self):
+            for movie in (movies := self.__loader.load_movies()):
+                self.__saver.save_movies(movie)
+
+        def save_movie_genres(self):
+            for movie_genre in (movie_genres := self.__loader.load_movie_genres()):
+                self.__saver.save_movie_genres(movie_genre)
+
         def save_movie_people(self):
-            pass
+            for director in (directors := self.__loader.load_movie_directors()):
+                self.__saver.save_movie_people(director)
+            for actor in (actors := self.__loader.load_movie_actors()):
+                self.__saver.save_movie_people(actor)
+            for writer in (writers := self.__loader.load_movie_writers()):
+                self.__saver.save_movie_people(writer)
+
+        def migrate(self):
+            try:
+                self.save_people()
+                self.save_genres()
+                self.save_movies()
+                self.save_movie_genres()
+                self.save_movie_people()
+            except Exception as e:
+                logger.debug(f'Migration error {e}')
+
 
     loader = SQLiteLoader(sqlite_conn)
     saver = PostgresSaver(pg_conn)
-
-    def save_people(loader: SQLiteLoader, saver: PostgresSaver):
-        for actor in (actors := loader.load_actors()):
-            saver.save_people(actor)
-        for director in (directors := loader.load_directors()):
-            saver.save_people(director)
-        for writer in (writers := loader.load_writers()):
-            saver.save_people(writer)
-    save_people(loader, saver)
-
-    def save_genres(loader: SQLiteLoader, saver: PostgresSaver):
-        saver.save_genres(genres := loader.load_genres())
-    save_genres(loader, saver)
-
-    def save_movies(loader: SQLiteLoader, saver: PostgresSaver):
-        for movie in (movies := loader.load_movies()):
-            saver.save_movies(movie)
-    save_movies(loader, saver)
-
-    def save_movie_genres(loader: SQLiteLoader, saver: PostgresSaver):
-        for movie_genre in (movie_genres := loader.load_movie_genres()):
-            saver.save_movie_genres(movie_genre)
-    save_movie_genres(loader, saver)
-
-
+    migrator = DatabaseMigrator(loader, saver)
+    migrator.migrate()
 
 
 if __name__ == '__main__':
