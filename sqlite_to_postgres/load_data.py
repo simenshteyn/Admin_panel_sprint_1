@@ -1,3 +1,4 @@
+import os
 import sqlite3
 
 import logging
@@ -390,9 +391,9 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
 
 if __name__ == '__main__':
 
-    dsl = {'dbname': 'movies',
-           'user': 'postgres',
-           'password': 'yandex01',
+    dsl = {'dbname': os.environ.get('DB_NAME'),
+           'user': os.environ.get('DB_USER'),
+           'password': os.environ.get('DB_PASSWORD'),
            'host': '127.0.0.1',
            'port': 5432
            }
