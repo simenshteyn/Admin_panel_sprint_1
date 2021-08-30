@@ -197,6 +197,20 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             self.__connection = pg_conn
 
         @timed
+        def truncate_tables(self):
+            curs = self.__connection.cursor()
+            try:
+                curs.execute(f"""TRUNCATE content.people CASCADE""")
+                curs.execute(f"""TRUNCATE content.genres CASCADE""")
+                curs.execute(f"""TRUNCATE content.movies CASCADE""")
+                curs.execute(f"""TRUNCATE content.movie_genres CASCADE""")
+                curs.execute(f"""TRUNCATE content.movie_people CASCADE""")
+            except Exception as e:
+                logger.debug(f'Error {e}')
+            finally:
+                curs.close()
+
+        @timed
         def save_people(self, data):
             curs = self.__connection.cursor()
             args = ','.join(curs.mogrify("(%s)",
@@ -317,9 +331,17 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
 
 
     class DatabaseMigrator:
-        def __init__(self, loader: SQLiteLoader, saver: PostgresSaver):
+        def __init__(self,
+                     loader: SQLiteLoader,
+                     saver: PostgresSaver,
+                     truncated=True):
             self.__loader = loader
             self.__saver = saver
+            self.__truncated = truncated
+
+        def __truncate_tables(self):
+            if self.__truncated:
+                saver.truncate_tables()
 
         def __save_people(self):
             for actor in (actors := self.__loader.load_actors()):
@@ -350,6 +372,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
 
         def migrate(self):
             try:
+                self.__truncate_tables()
                 self.__save_people()
                 self.__save_genres()
                 self.__save_movies()
