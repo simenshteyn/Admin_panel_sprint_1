@@ -3,14 +3,10 @@ import sqlite3
 import logging
 import time
 from functools import wraps
-import uuid
 
 import psycopg2
 from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
-psycopg2.extras.register_uuid()
-
-
 
 
 def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
@@ -50,7 +46,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             query = curs.execute("""SELECT name
                                        FROM actors
                                       ORDER BY name
-                                  """)
+                                 """)
             while (actors_list := query.fetchmany(chunk_size)):
                 yield actors_list
 
@@ -60,7 +56,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             query = curs.execute("""SELECT name
                                        FROM writers
                                       ORDER BY name
-                                  """)
+                                 """)
             while (writers_list := query.fetchmany(chunk_size)):
                 yield writers_list
 
@@ -71,8 +67,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                                        FROM movies
                                       WHERE NOT (director='N/A')
                                       ORDER BY director
-                                  """)
-
+                                 """)
             while (dirty_directors_list := query.fetchmany(chunk_size)):
                 directors_list = []
                 for director_tuple in dirty_directors_list:
@@ -88,7 +83,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             query = curs.execute("""SELECT title, plot, imdb_rating
                                        FROM movies
                                       ORDER BY title
-                                  """)
+                                 """)
             while (movies_list := query.fetchmany(chunk_size)):
                 yield movies_list
 
@@ -98,7 +93,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             query = curs.execute("""SELECT DISTINCT genre
                                        FROM movies
                                       ORDER BY genre
-                                  """)
+                                 """)
             dirty_genres_list = query.fetchall()
             result_set = set()
             for genre_tuple in dirty_genres_list:
@@ -113,7 +108,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             query = curs.execute("""SELECT title, genre
                                        FROM movies
                                       ORDER BY title
-                                  """)
+                                 """)
             while (result := query.fetchone()):
                 result = (result[0], tuple(result[1].split(', '), ))
                 yield result
@@ -129,7 +124,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                                         ON a.id = movie_actors.actor_id
                                      WHERE NOT (a.name = 'N/A')
                                      ORDER BY a.name
-                                  """)
+                                 """)
             while (movie_actors := query.fetchmany(chunk_size)):
                 actors_list = []
                 for movie in movie_actors:
@@ -144,7 +139,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                                       FROM movies
                                      WHERE NOT (director = 'N/A')
                                      ORDER BY director
-                                  """)
+                                 """)
             while (movie_directors := query.fetchmany(chunk_size)):
                 directors_list = []
                 for movie_director in movie_directors:
@@ -162,7 +157,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                                            OR m.writers LIKE '%'||w.id||'%'
                                      WHERE NOT (w.name = 'N/A')
                                      ORDER BY w.name
-                                  """)
+                                 """)
             while (movie_writers := query.fetchmany(chunk_size)):
                 writers_list = []
                 for movie_writer in movie_writers:
@@ -203,25 +198,17 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
     loader = SQLiteLoader(sqlite_conn)
     saver = PostgresSaver(pg_conn)
 
-    # for actor in (actors := loader.load_actors()):
-    #     saver.save_people(actor)
-    for director in (directors := loader.load_directors()):
-        saver.save_people(director)
-    # for writer in (writers := loader.load_writers()):
-    #     saver.save_people(writer)
+    def load_people(loader: SQLiteLoader, saver: PostgresSaver):
+        for actor in (actors := loader.load_actors()):
+            saver.save_people(actor)
+        for director in (directors := loader.load_directors()):
+            saver.save_people(director)
+        for writer in (writers := loader.load_writers()):
+            saver.save_people(writer)
+
+    load_people(loader, saver)
 
 
-
-
-
-
-def load_from_sqlite(connection: sqlite3.Connection, pg_conn: _connection):
-    """Основной метод загрузки данных из SQLite в Postgres"""
-    #postgres_saver = PostgresSaver(pg_conn)
-    #sqlite_loader = SQLiteLoader(connection)
-    #data = sqlite_loader.load_movies()
-    #postgres_saver.save_all_data(data)
-    pass
 
 
 if __name__ == '__main__':
