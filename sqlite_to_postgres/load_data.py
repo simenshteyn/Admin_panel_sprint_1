@@ -83,7 +83,13 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
         @timed
         def load_movies(self, chunk_size=100):
             curs = self.__connection.cursor()
-            query = curs.execute("""SELECT title, plot, imdb_rating
+            query = curs.execute("""SELECT title,
+                                      CASE WHEN plot = 'N/A' THEN NULL
+                                           ELSE plot
+                                       END AS plot, 
+                                      CASE WHEN imdb_rating = 'N/A' THEN NULL
+                                           ELSE imdb_rating
+                                       END AS imdb_rating 
                                        FROM movies
                                       ORDER BY title
                                  """)
@@ -194,6 +200,8 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                               """)
             except Exception as e:
                 logger.debug(f'Error {e}')
+            finally:
+                curs.close()
 
         @timed
         def save_genres(self, data):
@@ -207,9 +215,26 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                               """)
             except Exception as e:
                 logger.debug(f'Error {e}')
+            finally:
+                curs.close()
 
-        def save_movies(self):
-            pass
+        @timed
+        def save_movies(self, data):
+            curs = self.__connection.cursor()
+            args = ','.join(curs.mogrify("(%s, %s, %s)",
+                                         item).decode() for item in data)
+            try:
+                curs.execute(f"""INSERT INTO content.movies (movie_title,
+                                                             movie_desc,
+                                                             movie_rating)
+                                 VALUES {args}
+                                     ON CONFLICT DO NOTHING
+                              """)
+            except Exception as e:
+                logger.debug(f'Error {e}')
+            finally:
+                curs.close()
+
 
         def save_movie_genres(self):
             pass
@@ -220,18 +245,23 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
     loader = SQLiteLoader(sqlite_conn)
     saver = PostgresSaver(pg_conn)
 
-    def load_people(loader: SQLiteLoader, saver: PostgresSaver):
+    def save_people(loader: SQLiteLoader, saver: PostgresSaver):
         for actor in (actors := loader.load_actors()):
             saver.save_people(actor)
         for director in (directors := loader.load_directors()):
             saver.save_people(director)
         for writer in (writers := loader.load_writers()):
             saver.save_people(writer)
-    load_people(loader, saver)
+    save_people(loader, saver)
 
     def save_genres(loader: SQLiteLoader, saver: PostgresSaver):
         saver.save_genres(genres := loader.load_genres())
     save_genres(loader, saver)
+
+    def save_movies(loader: SQLiteLoader, saver: PostgresSaver):
+        for movie in (movies := loader.load_movies()):
+            saver.save_movies(movie)
+    save_movies(loader, saver)
 
 
 
