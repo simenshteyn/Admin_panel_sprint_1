@@ -117,15 +117,21 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             return genre_list
 
         @timed
-        def load_movie_genres(self):
+        def load_movie_genres(self, chunk_size=250):
             curs = self.__connection.cursor()
             query = curs.execute("""SELECT title, genre
                                        FROM movies
                                       ORDER BY title
                                  """)
-            while (result := query.fetchone()):
-                result = (result[0], tuple(result[1].split(', '), ))
-                yield result
+            while (dirty_movie_genres := query.fetchmany(chunk_size)):
+                movie_genres_list = []
+                for movie_genre in dirty_movie_genres:
+                    movies = (movie_genre[0],
+                              tuple(movie_genre[1].split(', '),)
+                              )
+                    for movie in movies[1]:
+                        movie_genres_list.append(tuple([movies[0], movie]))
+                yield movie_genres_list
             curs.close()
 
         @timed
@@ -236,8 +242,37 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                 curs.close()
 
 
-        def save_movie_genres(self):
-            pass
+        def save_movie_genres(self, data):
+            curs = self.__connection.cursor()
+            args = ','.join(curs.mogrify("(%s, %s)",
+                                         item).decode() for item in data)
+            try:
+                curs.execute(f"""CREATE TABLE IF NOT EXISTS content.mg_tmp (
+                                     movie_title    text,
+                                     genre_name     text,
+                                     UNIQUE (movie_title, genre_name)
+                                 )
+                              """)
+                curs.execute(f"""INSERT INTO content.mg_tmp
+                                 VALUES {args}
+                                     ON CONFLICT DO NOTHING
+                              """)
+                curs.execute(f"""INSERT INTO content.movie_genres(movie_id,
+                                                                  genre_id)
+                                 SELECT m.movie_id, g.genre_id
+                                   FROM content.mg_tmp AS t
+                                   JOIN content.genres AS g
+                                     ON g.genre_name = t.genre_name
+                                   JOIN content.movies AS m
+                                     ON m.movie_title = t.movie_title
+                                  ORDER BY m.movie_title
+                                     ON CONFLICT DO NOTHING
+                              """)
+                curs.execute(f"""DROP TABLE content.mg_tmp""")
+            except Exception as e:
+                logger.debug(f'Error {e}')
+            finally:
+                curs.close()
 
         def save_movie_people(self):
             pass
@@ -262,6 +297,11 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
         for movie in (movies := loader.load_movies()):
             saver.save_movies(movie)
     save_movies(loader, saver)
+
+    def save_movie_genres(loader: SQLiteLoader, saver: PostgresSaver):
+        for movie_genre in (movie_genres := loader.load_movie_genres()):
+            saver.save_movie_genres(movie_genre)
+    save_movie_genres(loader, saver)
 
 
 
