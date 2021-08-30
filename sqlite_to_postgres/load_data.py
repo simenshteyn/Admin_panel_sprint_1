@@ -72,7 +72,14 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
                                       WHERE NOT (director='N/A')
                                       ORDER BY director
                                   """)
-            while (directors_list := query.fetchmany(chunk_size)):
+
+            while (dirty_directors_list := query.fetchmany(chunk_size)):
+                directors_list = []
+                for director_tuple in dirty_directors_list:
+                    for director in director_tuple[0].split(', '):
+                        if director.endswith('(co-director)'):
+                            director = director[:-13]
+                        directors_list.append(tuple([director]))
                 yield directors_list
 
         @timed
@@ -196,10 +203,12 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
     loader = SQLiteLoader(sqlite_conn)
     saver = PostgresSaver(pg_conn)
 
-    for actor in (actors := loader.load_actors()):
-        saver.save_people(actor)
+    # for actor in (actors := loader.load_actors()):
+    #     saver.save_people(actor)
     for director in (directors := loader.load_directors()):
         saver.save_people(director)
+    # for writer in (writers := loader.load_writers()):
+    #     saver.save_people(writer)
 
 
 
