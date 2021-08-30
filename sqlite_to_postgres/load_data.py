@@ -321,7 +321,7 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             self.__loader = loader
             self.__saver = saver
 
-        def save_people(self):
+        def __save_people(self):
             for actor in (actors := self.__loader.load_actors()):
                 self.__saver.save_people(actor)
             for director in (directors := self.__loader.load_directors()):
@@ -329,18 +329,18 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
             for writer in (writers := self.__loader.load_writers()):
                 self.__saver.save_people(writer)
 
-        def save_genres(self):
+        def __save_genres(self):
             self.__saver.save_genres(genres := self.__loader.load_genres())
 
-        def save_movies(self):
+        def __save_movies(self):
             for movie in (movies := self.__loader.load_movies()):
                 self.__saver.save_movies(movie)
 
-        def save_movie_genres(self):
+        def __save_movie_genres(self):
             for movie_genre in (movie_genres := self.__loader.load_movie_genres()):
                 self.__saver.save_movie_genres(movie_genre)
 
-        def save_movie_people(self):
+        def __save_movie_people(self):
             for director in (directors := self.__loader.load_movie_directors()):
                 self.__saver.save_movie_people(director)
             for actor in (actors := self.__loader.load_movie_actors()):
@@ -350,11 +350,11 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
 
         def migrate(self):
             try:
-                self.save_people()
-                self.save_genres()
-                self.save_movies()
-                self.save_movie_genres()
-                self.save_movie_people()
+                self.__save_people()
+                self.__save_genres()
+                self.__save_movies()
+                self.__save_movie_genres()
+                self.__save_movie_people()
             except Exception as e:
                 logger.debug(f'Migration error {e}')
 
