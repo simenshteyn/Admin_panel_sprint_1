@@ -13,8 +13,8 @@ CREATE TABLE IF NOT EXISTS content.movies (
     movie_desc      text,
     movie_rating    numeric(2, 1)
                     CHECK (movie_rating BETWEEN 0 AND 10),
-    created_at      timestamp    DEFAULT (now()),
-    updated_at      timestamp,
+    created_at      timestamp with time zone DEFAULT (now()),
+    updated_at      timestamp with time zone,
     UNIQUE (movie_title)
 );
 
@@ -23,8 +23,8 @@ CREATE TABLE IF NOT EXISTS content.people (
     full_name       text        NOT NULL,
     person_desc     text,
     birthday        date,
-    created_at      timestamp    DEFAULT (now()),
-    updated_at      timestamp,
+    created_at      timestamp with time zone DEFAULT (now()),
+    updated_at      timestamp with time zone,
     UNIQUE (full_name)
 );
 
@@ -32,8 +32,8 @@ CREATE TABLE IF NOT EXISTS content.genres (
     genre_id        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     genre_name      text        UNIQUE NOT NULL,
     genre_desc      text,
-    created_at      timestamp   DEFAULT (now()),
-    updated_at      timestamp
+    created_at      timestamp with time zone DEFAULT (now()),
+    updated_at      timestamp with time zone
 );
 
 CREATE TABLE IF NOT EXISTS content.movie_people (
