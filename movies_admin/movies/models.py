@@ -15,18 +15,17 @@ class Movies(models.Model):
     movie_desc = models.TextField(_('movie desc'),
                                   blank=True,
                                   )
-    movie_rating = models.FloatField(_('rating'),
+    movie_rating = models.DecimalField(_('rating'),
+                                   max_digits=2,
+                                   decimal_places=1,
                                    validators=[MinValueValidator(0),
                                                MaxValueValidator(10)],
-                                   blank=True
-                                     )
+                                   blank=True)
     created_at = models.DateTimeField(_('created at'),
-                                      auto_now_add=True
-                                      )
+                                      auto_now_add=True)
     updated_at = models.DateTimeField(_('updated at'),
                                       auto_now=True,
-                                      blank=True
-                                      )
+                                      blank=True)
 
     class Meta:
         verbose_name = _('movie')
