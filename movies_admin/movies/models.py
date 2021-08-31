@@ -4,10 +4,14 @@ from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 
-# Create your models here.
+
 class TimeStampedModel(models.Model):
-    created_at = models.DateTimeField(_('created at'), auto_now_add=True, null=True, blank=True)
-    updated_at = models.DateTimeField(_('updated at'), auto_now=True, null=True, blank=True)
+    created_at = models.DateTimeField(_('created at'),
+                                      auto_now_add=True,
+                                      null=True, blank=True)
+    updated_at = models.DateTimeField(_('updated at'),
+                                      auto_now=True,
+                                      null=True, blank=True)
 
     class Meta:
         abstract = True
@@ -23,9 +27,9 @@ class Movies(TimeStampedModel, models.Model):
     movie_title = models.TextField(_('movie title'), blank=False)
     movie_desc = models.TextField(_('movie desc'), blank=True, null=True)
     movie_rating = models.DecimalField(_('rating'),
-                                   max_digits=2,
-                                   decimal_places=1,
-                                   validators=[MinValueValidator(0),
+                                       max_digits=2,
+                                       decimal_places=1,
+                                       validators=[MinValueValidator(0),
                                                MaxValueValidator(10)],
                                        blank=True,
                                        null=True)
@@ -38,23 +42,22 @@ class Movies(TimeStampedModel, models.Model):
         db_table = 'content"."movies'
 
 
-
-
 class People(TimeStampedModel, models.Model):
     person_id = models.UUIDField(_('movie uuid'),
-                                primary_key=True,
-                                default=uuid.uuid4,
-                                editable=False,
-                                unique=True)
+                                 primary_key=True,
+                                 default=uuid.uuid4,
+                                 editable=False,
+                                 unique=True)
     full_name = models.TextField(_('full name'), blank=False)
-    person_desc = models.TextField(_('person description'), blank=True, null=True)
+    person_desc = models.TextField(_('person description'),
+                                   blank=True, null=True)
     birthday = models.DateField(_('birthday'), blank=True, null=True)
 
     def __str__(self):
         return self.full_name
 
     class Meta:
-        verbose_name  = _('person')
+        verbose_name = _('person')
         verbose_name_plural = _('people')
         db_table = 'content"."people'
 
@@ -66,7 +69,8 @@ class Genres(TimeStampedModel, models.Model):
                                 editable=False,
                                 unique=True)
     genre_name = models.TextField(_('genre name'), blank=False)
-    genre_desc = models.TextField(_('genre description'), blank=True, null=True)
+    genre_desc = models.TextField(_('genre description'),
+                                  blank=True, null=True)
 
     def __str__(self):
         return self.genre_name
@@ -85,10 +89,10 @@ class MoviePeople(models.Model):
         WRITER = 'writer', _('writer')
 
     movie_people_id = models.UUIDField(_('movie people uuid'),
-                                primary_key=True,
-                                default=uuid.uuid4,
-                                editable=False,
-                                unique=True)
+                                       primary_key=True,
+                                       default=uuid.uuid4,
+                                       editable=False,
+                                       unique=True)
     movie = models.ForeignKey(Movies, on_delete=models.CASCADE)
     person = models.ForeignKey(People, on_delete=models.CASCADE)
     person_role = models.CharField(max_length=10, choices=PersonRole.choices)
