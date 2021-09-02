@@ -13,6 +13,7 @@ class MoviePeopleInline(admin.TabularInline):
     extra = 0
     show_change_link = True
 
+
 @admin.register(Genres)
 class GenresAdmin(admin.ModelAdmin):
     search_fields = ['genre_name']

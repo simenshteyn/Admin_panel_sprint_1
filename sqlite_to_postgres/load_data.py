@@ -48,8 +48,8 @@ class SQLiteLoader:
         curs = self.__connection.cursor()
         try:
             query = curs.execute("""SELECT name
-                                       FROM actors
-                                      ORDER BY name
+                                      FROM actors
+                                     ORDER BY name
                                  """)
             while (actors_list := query.fetchmany(chunk_size)):
                 yield actors_list
@@ -63,8 +63,8 @@ class SQLiteLoader:
         curs = self.__connection.cursor()
         try:
             query = curs.execute("""SELECT name
-                                       FROM writers
-                                      ORDER BY name
+                                      FROM writers
+                                     ORDER BY name
                                  """)
             while (writers_list := query.fetchmany(chunk_size)):
                 yield writers_list
@@ -78,9 +78,9 @@ class SQLiteLoader:
         curs = self.__connection.cursor()
         try:
             query = curs.execute("""SELECT director
-                                       FROM movies
-                                      WHERE NOT (director='N/A')
-                                      ORDER BY director
+                                      FROM movies
+                                     WHERE NOT (director='N/A')
+                                     ORDER BY director
                                  """)
             while (dirty_directors_list := query.fetchmany(chunk_size)):
                 directors_list = []
@@ -106,8 +106,8 @@ class SQLiteLoader:
                                       CASE WHEN imdb_rating = 'N/A' THEN NULL
                                            ELSE imdb_rating
                                        END AS imdb_rating 
-                                       FROM movies
-                                      ORDER BY title
+                                      FROM movies
+                                     ORDER BY title
                                  """)
             while (movies_list := query.fetchmany(chunk_size)):
                 yield movies_list
@@ -123,8 +123,8 @@ class SQLiteLoader:
         genre_list = []
         try:
             query = curs.execute("""SELECT DISTINCT genre
-                                       FROM movies
-                                      ORDER BY genre
+                                      FROM movies
+                                     ORDER BY genre
                                  """)
             dirty_genres_list = query.fetchall()
 
@@ -147,8 +147,8 @@ class SQLiteLoader:
         movie_genres_list = []
         try:
             query = curs.execute("""SELECT title, genre
-                                       FROM movies
-                                      ORDER BY title
+                                      FROM movies
+                                     ORDER BY title
                                  """)
             while (dirty_movie_genres := query.fetchmany(chunk_size)):
                 for movie_genre in dirty_movie_genres:
@@ -433,8 +433,8 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
 
 if __name__ == '__main__':
 
-    dsl = {'dbname': os.environ.get('DB_NAME'),
-           'user': os.environ.get('DB_USER'),
+    dsl = {'dbname': os.environ.get('DB_NAME', 'movies'),
+           'user': os.environ.get('DB_USER', 'postgres'),
            'password': os.environ.get('DB_PASSWORD'),
            'host': os.environ.get('DB_HOST', '127.0.0.1'),
            'port': os.environ.get('DB_PORT', '5432'),

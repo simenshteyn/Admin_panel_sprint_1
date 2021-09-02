@@ -120,7 +120,6 @@ class MovieGenres(models.Model):
     movie = models.ForeignKey(Movies, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genres, on_delete=models.CASCADE)
 
-
     class Meta:
         verbose_name = _('movie genre')
         verbose_name_plural = _('movie genres')
