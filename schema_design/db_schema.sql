@@ -15,7 +15,7 @@ CREATE TABLE IF NOT EXISTS content.movies (
                     CHECK (movie_rating BETWEEN 0 AND 10),
     created_at      timestamp with time zone DEFAULT (now()),
     updated_at      timestamp with time zone,
-    UNIQUE (movie_title)
+    UNIQUE (movie_title, movie_rating)
 );
 
 CREATE TABLE IF NOT EXISTS content.people (
@@ -25,7 +25,7 @@ CREATE TABLE IF NOT EXISTS content.people (
     birthday        date,
     created_at      timestamp with time zone DEFAULT (now()),
     updated_at      timestamp with time zone,
-    UNIQUE (full_name)
+    UNIQUE (full_name, birthday)
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (

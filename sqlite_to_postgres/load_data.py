@@ -10,8 +10,8 @@ from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
 
 
-def logger_init():
-    """Start logging for debug and measure performance."""
+def get_set_logger() -> logging.Logger:
+    """Get and set logging for debug and measure performance."""
     logger = logging.getLogger(__name__)
     logger.setLevel('DEBUG')
     handler = logging.StreamHandler()
@@ -22,7 +22,7 @@ def logger_init():
     return logger
 
 
-logger = logger_init()
+logger = get_set_logger()
 
 
 def timed(func):
@@ -46,151 +46,190 @@ class SQLiteLoader:
     @timed
     def load_actors(self, chunk_size=500):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT name
-                                   FROM actors
-                                  ORDER BY name
-                             """)
-        while (actors_list := query.fetchmany(chunk_size)):
-            yield actors_list
-        curs.close()
+        try:
+            query = curs.execute("""SELECT name
+                                       FROM actors
+                                      ORDER BY name
+                                 """)
+            while (actors_list := query.fetchmany(chunk_size)):
+                yield actors_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_writers(self, chunk_size=500):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT name
-                                   FROM writers
-                                  ORDER BY name
-                             """)
-        while (writers_list := query.fetchmany(chunk_size)):
-            yield writers_list
-        curs.close()
+        try:
+            query = curs.execute("""SELECT name
+                                       FROM writers
+                                      ORDER BY name
+                                 """)
+            while (writers_list := query.fetchmany(chunk_size)):
+                yield writers_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_directors(self, chunk_size=500):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT director
-                                   FROM movies
-                                  WHERE NOT (director='N/A')
-                                  ORDER BY director
-                             """)
-        while (dirty_directors_list := query.fetchmany(chunk_size)):
-            directors_list = []
-            for director_tuple in dirty_directors_list:
-                for director in director_tuple[0].split(', '):
-                    if director.endswith('(co-director)'):
-                        director = director[:-13]
-                    directors_list.append(tuple([director]))
-            yield directors_list
-        curs.close()
+        try:
+            query = curs.execute("""SELECT director
+                                       FROM movies
+                                      WHERE NOT (director='N/A')
+                                      ORDER BY director
+                                 """)
+            while (dirty_directors_list := query.fetchmany(chunk_size)):
+                directors_list = []
+                for director_tuple in dirty_directors_list:
+                    for director in director_tuple[0].split(', '):
+                        if director.endswith('(co-director)'):
+                            director = director[:-13]
+                        directors_list.append(tuple([director]))
+                yield directors_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_movies(self, chunk_size=100):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT title,
-                                  CASE WHEN plot = 'N/A' THEN NULL
-                                       ELSE plot
-                                   END AS plot, 
-                                  CASE WHEN imdb_rating = 'N/A' THEN NULL
-                                       ELSE imdb_rating
-                                   END AS imdb_rating 
-                                   FROM movies
-                                  ORDER BY title
-                             """)
-        while (movies_list := query.fetchmany(chunk_size)):
-            yield movies_list
-        curs.close()
+        try:
+            query = curs.execute("""SELECT title,
+                                      CASE WHEN plot = 'N/A' THEN NULL
+                                           ELSE plot
+                                       END AS plot, 
+                                      CASE WHEN imdb_rating = 'N/A' THEN NULL
+                                           ELSE imdb_rating
+                                       END AS imdb_rating 
+                                       FROM movies
+                                      ORDER BY title
+                                 """)
+            while (movies_list := query.fetchmany(chunk_size)):
+                yield movies_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_genres(self):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT DISTINCT genre
-                                   FROM movies
-                                  ORDER BY genre
-                             """)
-        dirty_genres_list = query.fetchall()
         result_set = set()
-        for genre_tuple in dirty_genres_list:
-            for genre in (genre_tuple[0].split(', ')):
-                result_set.add(genre)
-
         genre_list = []
-        for genre in result_set:
-            genre_list.append(tuple([genre]))
-        curs.close()
+        try:
+            query = curs.execute("""SELECT DISTINCT genre
+                                       FROM movies
+                                      ORDER BY genre
+                                 """)
+            dirty_genres_list = query.fetchall()
+
+            for genre_tuple in dirty_genres_list:
+                for genre in (genre_tuple[0].split(', ')):
+                    result_set.add(genre)
+
+            for genre in result_set:
+                genre_list.append(tuple([genre]))
+
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
         return genre_list
 
     @timed
     def load_movie_genres(self, chunk_size=250):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT title, genre
-                                   FROM movies
-                                  ORDER BY title
-                             """)
-        while (dirty_movie_genres := query.fetchmany(chunk_size)):
-            movie_genres_list = []
-            for movie_genre in dirty_movie_genres:
-                movies = (movie_genre[0],
-                          tuple(movie_genre[1].split(', '),)
-                          )
-                for movie in movies[1]:
-                    movie_genres_list.append(tuple([movies[0], movie]))
-            yield movie_genres_list
-        curs.close()
+        movie_genres_list = []
+        try:
+            query = curs.execute("""SELECT title, genre
+                                       FROM movies
+                                      ORDER BY title
+                                 """)
+            while (dirty_movie_genres := query.fetchmany(chunk_size)):
+                for movie_genre in dirty_movie_genres:
+                    movies = (movie_genre[0],
+                              tuple(movie_genre[1].split(', '),)
+                              )
+                    for movie in movies[1]:
+                        movie_genres_list.append(tuple([movies[0], movie]))
+                yield movie_genres_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_movie_actors(self, chunk_size=500):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT a.name, m.title
-                                  FROM movie_actors
-                                  JOIN movies AS m
-                                    ON m.id = movie_actors.movie_id
-                                  JOIN actors AS a
-                                    ON a.id = movie_actors.actor_id
-                                 WHERE NOT (a.name = 'N/A')
-                                 ORDER BY a.name
-                             """)
-        while (movie_actors := query.fetchmany(chunk_size)):
-            actors_list = []
-            for movie in movie_actors:
-                actor = movie + ('actor',)
-                actors_list.append(actor)
-            yield actors_list
-        curs.close()
+        actors_list = []
+        try:
+            query = curs.execute("""SELECT a.name, m.title
+                                      FROM movie_actors
+                                      JOIN movies AS m
+                                        ON m.id = movie_actors.movie_id
+                                      JOIN actors AS a
+                                        ON a.id = movie_actors.actor_id
+                                     WHERE NOT (a.name = 'N/A')
+                                     ORDER BY a.name
+                                 """)
+            while (movie_actors := query.fetchmany(chunk_size)):
+
+                for movie in movie_actors:
+                    actor = movie + ('actor',)
+                    actors_list.append(actor)
+                yield actors_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_movie_directors(self, chunk_size=500):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT director, title
-                                  FROM movies
-                                 WHERE NOT (director = 'N/A')
-                                 ORDER BY director
-                             """)
-        while (movie_directors := query.fetchmany(chunk_size)):
-            directors_list = []
-            for movie_director in movie_directors:
-                director = movie_director + ('director',)
-                directors_list.append(director)
-            yield directors_list
-        curs.close()
+        directors_list = []
+        try:
+            query = curs.execute("""SELECT director, title
+                                      FROM movies
+                                     WHERE NOT (director = 'N/A')
+                                     ORDER BY director
+                                 """)
+            while (movie_directors := query.fetchmany(chunk_size)):
+                for movie_director in movie_directors:
+                    director = movie_director + ('director',)
+                    directors_list.append(director)
+                yield directors_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
     @timed
     def load_movie_writers(self, chunk_size=500):
         curs = self.__connection.cursor()
-        query = curs.execute("""SELECT w.name, m.title
-                                  FROM movies AS m
-                                  JOIN writers AS w
-                                    ON m.writer = w.id
-                                       OR m.writers LIKE '%'||w.id||'%'
-                                 WHERE NOT (w.name = 'N/A')
-                                 ORDER BY w.name
-                             """)
-        while (movie_writers := query.fetchmany(chunk_size)):
-            writers_list = []
-            for movie_writer in movie_writers:
-                writer = movie_writer + ('writer',)
-                writers_list.append(writer)
-            yield writers_list
-        curs.close()
+        writers_list = []
+        try:
+            query = curs.execute("""SELECT w.name, m.title
+                                      FROM movies AS m
+                                      JOIN writers AS w
+                                        ON m.writer = w.id
+                                           OR m.writers LIKE '%'||w.id||'%'
+                                     WHERE NOT (w.name = 'N/A')
+                                     ORDER BY w.name
+                                 """)
+            while (movie_writers := query.fetchmany(chunk_size)):
+                for movie_writer in movie_writers:
+                    writer = movie_writer + ('writer',)
+                    writers_list.append(writer)
+                yield writers_list
+        except Exception as e:
+            logger.debug(f'Error {e}')
+        finally:
+            curs.close()
 
 
 class PostgresSaver:
@@ -397,10 +436,10 @@ if __name__ == '__main__':
     dsl = {'dbname': os.environ.get('DB_NAME'),
            'user': os.environ.get('DB_USER'),
            'password': os.environ.get('DB_PASSWORD'),
-           'host': '127.0.0.1',
-           'port': 5432
+           'host': os.environ.get('DB_HOST', '127.0.0.1'),
+           'port': os.environ.get('DB_PORT', '5432'),
            }
 
     with sqlite3.connect('db.sqlite') as sqlite_conn,\
-         psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
-             main(sqlite_conn, pg_conn)
+             psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
+        main(sqlite_conn, pg_conn)

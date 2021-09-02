@@ -30,13 +30,13 @@ class Movies(TimeStampedModel, models.Model):
         blank=True, null=True
     )
 
-    def __str__(self):
-        return self.movie_title
-
     class Meta:
         verbose_name = _('movie')
         verbose_name_plural = _('movies')
         db_table = 'content"."movies'
+
+    def __str__(self):
+        return self.movie_title
 
 
 class People(TimeStampedModel, models.Model):
@@ -50,13 +50,13 @@ class People(TimeStampedModel, models.Model):
     )
     birthday = models.DateField(_('birthday'), blank=True, null=True)
 
-    def __str__(self):
-        return self.full_name
-
     class Meta:
         verbose_name = _('person')
         verbose_name_plural = _('people')
         db_table = 'content"."people'
+
+    def __str__(self):
+        return self.full_name
 
 
 class Genres(TimeStampedModel, models.Model):
@@ -69,13 +69,13 @@ class Genres(TimeStampedModel, models.Model):
         _('genre description'), blank=True, null=True
     )
 
-    def __str__(self):
-        return self.genre_name
-
     class Meta:
         verbose_name = _('genre')
         verbose_name_plural = _('genres')
         db_table = 'content"."genres'
+
+    def __str__(self):
+        return self.genre_name
 
 
 class MoviePeople(models.Model):
@@ -93,13 +93,13 @@ class MoviePeople(models.Model):
     person = models.ForeignKey(People, on_delete=models.CASCADE)
     person_role = models.CharField(max_length=10, choices=PersonRole.choices)
 
-    def __str__(self):
-        return f'{self.movie} ({self.person}, {self.person_role})'
-
     class Meta:
         verbose_name = _('movie person')
         verbose_name_plural = _('movie people')
         db_table = 'content"."movie_people'
+
+    def __str__(self):
+        return f'{self.movie} ({self.person}, {self.person_role})'
 
 
 class MovieGenres(models.Model):
@@ -110,10 +110,10 @@ class MovieGenres(models.Model):
     movie = models.ForeignKey(Movies, on_delete=models.CASCADE)
     genre = models.ForeignKey(Genres, on_delete=models.CASCADE)
 
-    def __str__(self):
-        return f'{self.movie} ({self.genre})'
-
     class Meta:
         verbose_name = _('movie genre')
         verbose_name_plural = _('movie genres')
         db_table = 'content"."movie_genres'
+
+    def __str__(self):
+        return f'{self.movie} ({self.genre})'
