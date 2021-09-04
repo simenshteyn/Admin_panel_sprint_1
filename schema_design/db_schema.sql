@@ -26,6 +26,13 @@ CREATE TABLE IF NOT EXISTS content.people (
     created_at      timestamp with time zone DEFAULT (now()),
     updated_at      timestamp with time zone,
     UNIQUE (full_name, birthday)
+    --Review response (TODO: delete afterwards)
+    /* Вероятность совпадения года, месяца и дня рождения у полных тёсок
+       крайне мала. Значительно вероятнее внесение дублей записей. В данном
+       случае ограничение установлено для борьбы с дубликатами. Первичный
+       ключ является суррогатным и никак не препрятствует внесению одного
+       человека несколько раз, поскольку uuid присваивается при внесении.
+    */
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (
@@ -44,11 +51,11 @@ CREATE TABLE IF NOT EXISTS content.movie_people (
                                 NOT NULL,
      UNIQUE (movie_id, person_id, person_role),
     FOREIGN KEY (movie_id)
-            REFERENCES content.movies(movie_id)
+            REFERENCES content.movies
             ON DELETE CASCADE
             ON UPDATE CASCADE,
     FOREIGN KEY (person_id)
-            REFERENCES content.people(person_id)
+            REFERENCES content.people
             ON DELETE CASCADE
             ON UPDATE CASCADE
 );
@@ -58,12 +65,18 @@ CREATE TABLE IF NOT EXISTS content.movie_genres (
     movie_id        uuid        NOT NULL,
     genre_id        uuid        NOT NULL,
      UNIQUE (movie_id, genre_id),
+    --Review response (TODO: delete afterwards):
+    /* В данном случае чистота кода представляется важнее, чем использование
+       сокращенной формы записи. Сигнатура массивная и содержит инструкции
+       ON UPDATE, ON DELETE, что препятствует удобному размещению в составе
+       соответствующего поля.
+    */
     FOREIGN KEY (movie_id)
-            REFERENCES content.movies(movie_id)
+            REFERENCES content.movies
             ON DELETE CASCADE
             ON UPDATE CASCADE,
     FOREIGN KEY (genre_id)
-            REFERENCES content.genres(genre_id)
+            REFERENCES content.genres
             ON DELETE CASCADE
             ON UPDATE CASCADE
 );
@@ -71,4 +84,3 @@ CREATE TABLE IF NOT EXISTS content.movie_genres (
 CREATE INDEX ON content.movies(movie_title);
 
 CREATE INDEX ON content.people(full_name);
-

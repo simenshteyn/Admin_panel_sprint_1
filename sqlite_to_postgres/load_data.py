@@ -10,7 +10,7 @@ from psycopg2.extensions import connection as _connection
 from psycopg2.extras import DictCursor
 
 
-def get_set_logger() -> logging.Logger:
+def get_logger() -> logging.Logger:
     """Get and set logging for debug and measure performance."""
     logger = logging.getLogger(__name__)
     logger.setLevel('DEBUG')
@@ -22,7 +22,7 @@ def get_set_logger() -> logging.Logger:
     return logger
 
 
-logger = get_set_logger()
+logger = get_logger()
 
 
 def timed(func):
@@ -226,6 +226,15 @@ class SQLiteLoader:
                     writer = movie_writer + ('writer',)
                     writers_list.append(writer)
                 yield writers_list
+        # Review response (TODO: delete afterwards)
+        # В функциях load_movie_actors(), load_movie_directors() и
+        # load_movie_writers() отличаются не только SQL запросы. В отдваемые
+        # данные добавляется роль персоны. Вводить обощающую функцию чтобы
+        # сократить два цикла в трех функциях не представляется хорошим
+        # решением для соблюдения чистоты и поддерживаемости кода. Например,
+        # в случае изменения логики обработки одной сущностей, придется
+        # переписывать обощающую функцию. Сейчас функции хорошо изолированы,
+        # легко читаются и при необходимости легко правятся.
         except Exception as e:
             logger.debug(f'Error {e}')
         finally:
@@ -403,12 +412,21 @@ class DatabaseMigrator:
             self.__saver.save_movie_genres(movie_genre)
 
     def __save_movie_people(self):
-        for director in (directors := self.__loader.load_movie_directors()):
-            self.__saver.save_movie_people(director)
-        for actor in (actors := self.__loader.load_movie_actors()):
-            self.__saver.save_movie_people(actor)
-        for writer in (writers := self.__loader.load_movie_writers()):
-            self.__saver.save_movie_people(writer)
+        people = [directors := self.__loader.load_movie_directors(),
+                  actors := self.__loader.load_movie_actors(),
+                  writers := self.__loader.load_movie_writers()]
+        for person_group in people:
+            for person in person_group:
+                self.__saver.save_movie_people(person)
+        # Review response (TODO: delete afterwards)
+        # Решение без "копиписта" содержит те же самые 6 строчек, но уже два
+        # вложенных цика, что ухудшает читабельность кода.
+        # for director in (directors := self.__loader.load_movie_directors()):
+        #     self.__saver.save_movie_people(director)
+        # for actor in (actors := self.__loader.load_movie_actors()):
+        #     self.__saver.save_movie_people(actor)
+        # for writer in (writers := self.__loader.load_movie_writers()):
+        #     self.__saver.save_movie_people(writer)
 
     def migrate(self):
         try:
