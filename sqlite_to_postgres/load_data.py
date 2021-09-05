@@ -27,6 +27,7 @@ logger = get_logger()
 
 def timed(func):
     """Decorator @timed prints execution time for given function."""
+
     @wraps(func)
     def wrapper(*args, **kwargs):
         start = time.time()
@@ -51,7 +52,7 @@ class SQLiteLoader:
                                       FROM actors
                                      ORDER BY name
                                  """)
-            while (actors_list := query.fetchmany(chunk_size)):
+            while actors_list := query.fetchmany(chunk_size):
                 yield actors_list
         except Exception as e:
             logger.debug(f'Error {e}')
@@ -109,7 +110,7 @@ class SQLiteLoader:
                                       FROM movies
                                      ORDER BY title
                                  """)
-            while (movies_list := query.fetchmany(chunk_size)):
+            while movies_list := query.fetchmany(chunk_size):
                 yield movies_list
         except Exception as e:
             logger.debug(f'Error {e}')
@@ -150,10 +151,10 @@ class SQLiteLoader:
                                       FROM movies
                                      ORDER BY title
                                  """)
-            while (dirty_movie_genres := query.fetchmany(chunk_size)):
+            while dirty_movie_genres := query.fetchmany(chunk_size):
                 for movie_genre in dirty_movie_genres:
                     movies = (movie_genre[0],
-                              tuple(movie_genre[1].split(', '),)
+                              tuple(movie_genre[1].split(', '), )
                               )
                     for movie in movies[1]:
                         movie_genres_list.append(tuple([movies[0], movie]))
@@ -177,7 +178,7 @@ class SQLiteLoader:
                                      WHERE NOT (a.name = 'N/A')
                                      ORDER BY a.name
                                  """)
-            while (movie_actors := query.fetchmany(chunk_size)):
+            while movie_actors := query.fetchmany(chunk_size):
 
                 for movie in movie_actors:
                     actor = movie + ('actor',)
@@ -221,20 +222,11 @@ class SQLiteLoader:
                                      WHERE NOT (w.name = 'N/A')
                                      ORDER BY w.name
                                  """)
-            while (movie_writers := query.fetchmany(chunk_size)):
+            while movie_writers := query.fetchmany(chunk_size):
                 for movie_writer in movie_writers:
                     writer = movie_writer + ('writer',)
                     writers_list.append(writer)
                 yield writers_list
-        # Review response (TODO: delete afterwards)
-        # В функциях load_movie_actors(), load_movie_directors() и
-        # load_movie_writers() отличаются не только SQL запросы. В отдваемые
-        # данные добавляется роль персоны. Вводить обощающую функцию чтобы
-        # сократить два цикла в трех функциях не представляется хорошим
-        # решением для соблюдения чистоты и поддерживаемости кода. Например,
-        # в случае изменения логики обработки одной из сущностей, придется
-        # переписывать обощающую функцию. Сейчас функции хорошо изолированы,
-        # легко читаются и при необходимости легко правятся.
         except Exception as e:
             logger.debug(f'Error {e}')
         finally:
@@ -418,15 +410,6 @@ class DatabaseMigrator:
         for person_group in people:
             for person in person_group:
                 self.__saver.save_movie_people(person)
-        # Review response (TODO: delete afterwards)
-        # Решение без "копиписта" содержит те же самые 6 строчек, но уже два
-        # вложенных цика, что ухудшает читабельность кода.
-        # for director in (directors := self.__loader.load_movie_directors()):
-        #     self.__saver.save_movie_people(director)
-        # for actor in (actors := self.__loader.load_movie_actors()):
-        #     self.__saver.save_movie_people(actor)
-        # for writer in (writers := self.__loader.load_movie_writers()):
-        #     self.__saver.save_movie_people(writer)
 
     def migrate(self):
         try:
@@ -450,7 +433,6 @@ def main(sqlite_conn: sqlite3.Connection, pg_conn: _connection):
 
 
 if __name__ == '__main__':
-
     dsl = {'dbname': os.environ.get('DB_NAME', 'movies'),
            'user': os.environ.get('DB_USER', 'postgres'),
            'password': os.environ.get('DB_PASSWORD'),
@@ -458,6 +440,6 @@ if __name__ == '__main__':
            'port': os.environ.get('DB_PORT', '5432'),
            }
 
-    with sqlite3.connect('db.sqlite') as sqlite_conn,\
-             psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
+    with sqlite3.connect('db.sqlite') as sqlite_conn, \
+            psycopg2.connect(**dsl, cursor_factory=DictCursor) as pg_conn:
         main(sqlite_conn, pg_conn)
