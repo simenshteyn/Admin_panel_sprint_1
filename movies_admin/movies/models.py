@@ -36,6 +36,26 @@ class Genres(TimeStampedModel, models.Model):
         return self.genre_name
 
 
+class People(TimeStampedModel, models.Model):
+    person_id = models.UUIDField(
+        _('movie uuid'), primary_key=True, default=uuid.uuid4,
+        editable=False, unique=True
+    )
+    full_name = models.TextField(_('full name'), blank=False)
+    person_desc = models.TextField(
+        _('person description'), blank=True, null=True
+    )
+    birthday = models.DateField(_('birthday'), blank=True, null=True)
+
+    class Meta:
+        verbose_name = _('person')
+        verbose_name_plural = _('people')
+        db_table = 'content"."people'
+
+    def __str__(self):
+        return self.full_name
+
+
 class Movies(TimeStampedModel, models.Model):
     movie_id = models.UUIDField(
         _('movie uuid'), primary_key=True, default=uuid.uuid4,
@@ -53,6 +73,11 @@ class Movies(TimeStampedModel, models.Model):
         through='MovieGenres',
         through_fields=('movie', 'genre'),
     )
+    movie_people = models.ManyToManyField(
+        People,
+        through='MoviePeople',
+        through_fields=('movie', 'person')
+    )
 
     class Meta:
         verbose_name = _('movie')
@@ -63,33 +88,7 @@ class Movies(TimeStampedModel, models.Model):
         return self.movie_title
 
 
-class People(TimeStampedModel, models.Model):
-    person_id = models.UUIDField(
-        _('movie uuid'), primary_key=True, default=uuid.uuid4,
-        editable=False, unique=True
-    )
-    full_name = models.TextField(_('full name'), blank=False)
-    person_desc = models.TextField(
-        _('person description'), blank=True, null=True
-    )
-    birthday = models.DateField(_('birthday'), blank=True, null=True)
-    movie_people = models.ManyToManyField(
-        Movies,
-        through='MoviePeople',
-        through_fields=('person', 'movie'),
-    )
-
-    class Meta:
-        verbose_name = _('person')
-        verbose_name_plural = _('people')
-        db_table = 'content"."people'
-
-    def __str__(self):
-        return self.full_name
-
-
 class MoviePeople(models.Model):
-
     class PersonRole(models.TextChoices):
         ACTOR = 'actor', _('actor')
         DIRECTOR = 'director', _('director')

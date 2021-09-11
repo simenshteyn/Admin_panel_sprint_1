@@ -7,12 +7,21 @@ class MovieGenresInline(admin.TabularInline):
     model = MovieGenres
     extra = 0
     show_change_link = True
+    def get_queryset(self, request):
+        queryset = super(MovieGenresInline, self).get_queryset(request)
+        queryset = queryset.select_related('movie', 'genre')
+        return queryset
 
 
 class MoviePeopleInline(admin.TabularInline):
     model = MoviePeople
     extra = 0
     show_change_link = True
+    autocomplete_fields = ('person', 'movie')
+    def get_queryset(self, request):
+        queryset = super(MoviePeopleInline, self).get_queryset(request)
+        queryset = queryset.select_related('movie', 'person')
+        return queryset
 
 
 @admin.register(Genres)
@@ -25,17 +34,9 @@ class GenresAdmin(admin.ModelAdmin):
 @admin.register(People)
 class PeopleAdmin(admin.ModelAdmin):
     search_fields = ['full_name']
-    list_display = ['full_name', 'count_movies']
+    list_display = ['full_name']
     ordering = ['full_name']
     inlines = [MoviePeopleInline]
-
-    def get_queryset(self, request):
-        queryset = super(PeopleAdmin, self).get_queryset(request)
-        queryset = queryset.prefetch_related('movie_people')
-        return queryset
-
-    def count_movies(self, instance):
-        return instance.movie_people.count()
 
 
 @admin.register(Movies)
@@ -44,6 +45,7 @@ class MoviesAdmin(admin.ModelAdmin):
     search_fields = ['movie_title']
     ordering = ['movie_title', 'movie_rating']
     inlines = [MovieGenresInline, MoviePeopleInline]
+
 
     def get_queryset(self, request):
         queryset = super(MoviesAdmin, self).get_queryset(request)
