@@ -9,8 +9,5 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('__debug__/', include(debug_toolbar.urls)),
     path('api-auth/', include('rest_framework.urls')),
-]
-
-router = SimpleRouter()
-router.register(r'movies', MoviesViewSet)
-urlpatterns += router.urls
+    path('api/', include('movies.api.urls')),
+    ]

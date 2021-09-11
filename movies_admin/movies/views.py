@@ -1,11 +1,9 @@
-from django.shortcuts import render
-
-from rest_framework.viewsets import ModelViewSet
+from rest_framework.viewsets import ReadOnlyModelViewSet
 
 from movies.models import Movies
-from movies.serializers import MoviesSerializer
+from movies.api.v1.serializers import MoviesSerializer
 
 
-class MoviesViewSet(ModelViewSet):
-    queryset = Movies.objects.all()[:5]
+class MoviesViewSet(ReadOnlyModelViewSet):
+    queryset = Movies.objects.all()
     serializer_class = MoviesSerializer
