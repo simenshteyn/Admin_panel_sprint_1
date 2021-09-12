@@ -17,8 +17,8 @@ class CustomPagination(pagination.PageNumberPagination):
         })
 
 class MoviesViewSet(ReadOnlyModelViewSet):
-    queryset = Movies.objects.all().prefetch_related('movie_genres',
-                                                     'movie_people')
+    queryset = Movies.objects.all() #.prefetch_related('movie_genres',
+                                    #                 'movie_people')
     serializer_class = MoviesSerializer
     pagination_class = CustomPagination
 
