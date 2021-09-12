@@ -7,12 +7,19 @@ CREATE TYPE content.person_role AS ENUM (
     'writer'
 );
 
+CREATE TYPE content.movie_type AS ENUM (
+    'movie',
+    'serial'
+);
+
 CREATE TABLE IF NOT EXISTS content.movies (
     movie_id        uuid        PRIMARY KEY DEFAULT gen_random_uuid(),
     movie_title     text        NOT NULL,
     movie_desc      text,
     movie_rating    numeric(2, 1)
                     CHECK (movie_rating BETWEEN 0 AND 10),
+    movie_type      content.movie_type
+                                NOT NULL DEFAULT 'movie',
     created_at      timestamp with time zone DEFAULT (now()),
     updated_at      timestamp with time zone,
     UNIQUE (movie_title, movie_rating)
@@ -26,13 +33,6 @@ CREATE TABLE IF NOT EXISTS content.people (
     created_at      timestamp with time zone DEFAULT (now()),
     updated_at      timestamp with time zone,
     UNIQUE (full_name, birthday)
-    --Review response (TODO: delete afterwards)
-    /* Вероятность совпадения года, месяца и дня рождения у полных тёсок
-       крайне мала. Значительно вероятнее внесение дублей записей. В данном
-       случае ограничение установлено для борьбы с дубликатами. Первичный
-       ключ является суррогатным и никак не препрятствует внесению одного
-       человека несколько раз, поскольку uuid присваивается при внесении.
-    */
 );
 
 CREATE TABLE IF NOT EXISTS content.genres (
@@ -65,12 +65,6 @@ CREATE TABLE IF NOT EXISTS content.movie_genres (
     movie_id        uuid        NOT NULL,
     genre_id        uuid        NOT NULL,
      UNIQUE (movie_id, genre_id),
-    --Review response (TODO: delete afterwards):
-    /* В данном случае чистота кода представляется важнее, чем использование
-       сокращенной формы записи. Сигнатура массивная и содержит инструкции
-       ON UPDATE, ON DELETE, что препятствует удобному размещению в составе
-       соответствующего поля.
-    */
     FOREIGN KEY (movie_id)
             REFERENCES content.movies
             ON DELETE CASCADE

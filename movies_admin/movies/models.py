@@ -57,12 +57,17 @@ class People(TimeStampedModel, models.Model):
 
 
 class Movies(TimeStampedModel, models.Model):
+    class MovieType(models.TextChoices):
+        MOVIE = 'movie', _('movie')
+        SERIAL = 'serial', _('serial')
+
     movie_id = models.UUIDField(
         _('movie uuid'), primary_key=True, default=uuid.uuid4,
         editable=False, unique=True
     )
     movie_title = models.TextField(_('movie title'), blank=False)
     movie_desc = models.TextField(_('movie desc'), blank=True, null=True)
+    movie_type = models.CharField(max_length=10, choices=MovieType.choices)
     movie_rating = models.DecimalField(
         _('rating'), max_digits=2, decimal_places=1,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
@@ -126,7 +131,8 @@ class MoviePeople(models.Model):
         editable=False, unique=True
     )
     movie = models.ForeignKey(Movies, on_delete=models.CASCADE)
-    person = models.ForeignKey(People, on_delete=models.CASCADE, related_name='moviepeoplerel')
+    person = models.ForeignKey(People, on_delete=models.CASCADE,
+                               related_name='moviepeoplerel')
     person_role = models.CharField(max_length=10, choices=PersonRole.choices)
 
     class Meta:
