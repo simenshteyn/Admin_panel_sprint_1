@@ -87,6 +87,33 @@ class Movies(TimeStampedModel, models.Model):
     def __str__(self):
         return self.movie_title
 
+    def actors(self):
+        result = list([
+            person.full_name for person in People.objects
+                .filter(moviepeoplerel__person_role='actor',
+                        moviepeoplerel__movie_id=self.movie_id)
+                        .distinct('full_name')
+        ])
+        return result
+
+    def directors(self):
+        result = list([
+            person.full_name for person in People.objects
+                .filter(moviepeoplerel__person_role='director',
+                        moviepeoplerel__movie_id=self.movie_id)
+                        .distinct('full_name')
+        ])
+        return result
+
+    def writers(self):
+        result = list([
+            person.full_name for person in People.objects
+                .filter(moviepeoplerel__person_role='writer',
+                        moviepeoplerel__movie_id=self.movie_id)
+                        .distinct('full_name')
+        ])
+        return result
+
 
 class MoviePeople(models.Model):
     class PersonRole(models.TextChoices):
@@ -99,7 +126,7 @@ class MoviePeople(models.Model):
         editable=False, unique=True
     )
     movie = models.ForeignKey(Movies, on_delete=models.CASCADE)
-    person = models.ForeignKey(People, on_delete=models.CASCADE)
+    person = models.ForeignKey(People, on_delete=models.CASCADE, related_name='moviepeoplerel')
     person_role = models.CharField(max_length=10, choices=PersonRole.choices)
 
     class Meta:
