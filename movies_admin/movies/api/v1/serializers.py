@@ -1,7 +1,7 @@
 from rest_framework import serializers
 from rest_framework.serializers import ModelSerializer
 
-from movies.models import Movies, Genres, People
+from movies.models import Movies, Genres
 
 
 class GenresSerializer(serializers.RelatedField):
@@ -24,6 +24,7 @@ class MoviesSerializer(ModelSerializer):
 
     class Meta:
         model = Movies
+        ordering = ['-id']
         fields = ['id',
                   'title',
                   'description',

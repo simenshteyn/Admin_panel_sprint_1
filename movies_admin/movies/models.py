@@ -97,7 +97,7 @@ class Movies(TimeStampedModel, models.Model):
             person.full_name for person in People.objects
                 .filter(moviepeoplerel__person_role='actor',
                         moviepeoplerel__movie_id=self.movie_id)
-                        .distinct('full_name')
+                .distinct('full_name')
         ])
         return result
 
@@ -106,7 +106,7 @@ class Movies(TimeStampedModel, models.Model):
             person.full_name for person in People.objects
                 .filter(moviepeoplerel__person_role='director',
                         moviepeoplerel__movie_id=self.movie_id)
-                        .distinct('full_name')
+                .distinct('full_name')
         ])
         return result
 
@@ -115,7 +115,7 @@ class Movies(TimeStampedModel, models.Model):
             person.full_name for person in People.objects
                 .filter(moviepeoplerel__person_role='writer',
                         moviepeoplerel__movie_id=self.movie_id)
-                        .distinct('full_name')
+                .distinct('full_name')
         ])
         return result
 

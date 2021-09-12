@@ -11,14 +11,15 @@ class CustomPagination(pagination.PageNumberPagination):
         return Response({
             'count': self.page.paginator.count,
             'total_pages': self.page.paginator.num_pages,
-            'prev': self.page.previous_page_number(),
-            'next': self.page.next_page_number(),
+            'prev': self.page.previous_page_number() if self.page.number > 1
+            else None,
+            'next': self.page.next_page_number()
+            if self.page.number < self.page.paginator.num_pages else None,
             'result': data,
         })
 
+
 class MoviesViewSet(ReadOnlyModelViewSet):
-    queryset = Movies.objects.all() #.prefetch_related('movie_genres',
-                                    #                 'movie_people')
+    queryset = Movies.objects.prefetch_related('movie_genres')
     serializer_class = MoviesSerializer
     pagination_class = CustomPagination
-

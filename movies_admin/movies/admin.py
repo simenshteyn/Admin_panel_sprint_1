@@ -41,8 +41,7 @@ class PeopleAdmin(admin.ModelAdmin):
 
 @admin.register(Movies)
 class MoviesAdmin(admin.ModelAdmin):
-    list_display = ['movie_title', 'movie_rating', 'genres',
-                    'actors', 'directors', 'writers']
+    list_display = ['movie_title', 'movie_rating', 'genres']
     search_fields = ['movie_title']
     ordering = ['movie_title', 'movie_rating']
     inlines = [MovieGenresInline, MoviePeopleInline]
