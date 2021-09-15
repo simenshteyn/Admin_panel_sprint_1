@@ -2,6 +2,7 @@ import uuid
 
 from django.core.validators import MinValueValidator, MaxValueValidator
 from django.db import models
+from django.db.models import Prefetch
 from django.utils.translation import gettext_lazy as _
 
 
@@ -67,7 +68,8 @@ class Movies(TimeStampedModel, models.Model):
     )
     movie_title = models.TextField(_('movie title'), blank=False)
     movie_desc = models.TextField(_('movie desc'), blank=True, null=True)
-    movie_type = models.CharField(max_length=10, choices=MovieType.choices)
+    movie_type = models.CharField(_('movie type'), max_length=10,
+                                  choices=MovieType.choices)
     movie_rating = models.DecimalField(
         _('rating'), max_digits=2, decimal_places=1,
         validators=[MinValueValidator(0), MaxValueValidator(10)],
@@ -88,33 +90,31 @@ class Movies(TimeStampedModel, models.Model):
         verbose_name = _('movie')
         verbose_name_plural = _('movies')
         db_table = 'content"."movies'
+        ordering = ['movie_title']
 
     def __str__(self):
         return self.movie_title
 
     def actors(self):
         result = list([
-            person.full_name for person in People.objects
-                .filter(moviepeoplerel__person_role='actor',
-                        moviepeoplerel__movie_id=self.movie_id)
+            movie_people.full_name for movie_people in self.movie_people
+                .filter(moviepeoplerel__person_role='actor')
                 .distinct('full_name')
         ])
         return result
 
     def directors(self):
         result = list([
-            person.full_name for person in People.objects
-                .filter(moviepeoplerel__person_role='director',
-                        moviepeoplerel__movie_id=self.movie_id)
+            movie_people.full_name for movie_people in self.movie_people
+                .filter(moviepeoplerel__person_role='director')
                 .distinct('full_name')
         ])
         return result
 
     def writers(self):
         result = list([
-            person.full_name for person in People.objects
-                .filter(moviepeoplerel__person_role='writer',
-                        moviepeoplerel__movie_id=self.movie_id)
+            movie_people.full_name for movie_people in self.movie_people
+                .filter(moviepeoplerel__person_role='writer')
                 .distinct('full_name')
         ])
         return result
@@ -131,14 +131,14 @@ class MoviePeople(models.Model):
         editable=False, unique=True
     )
     movie = models.ForeignKey(Movies, on_delete=models.CASCADE)
-    person = models.ForeignKey(People, on_delete=models.CASCADE,
-                               related_name='moviepeoplerel')
+    person = models.ForeignKey(People, on_delete=models.CASCADE)
     person_role = models.CharField(max_length=10, choices=PersonRole.choices)
 
     class Meta:
         verbose_name = _('movie person')
         verbose_name_plural = _('movie people')
         db_table = 'content"."movie_people'
+        default_related_name = 'moviepeoplerel'
 
     def __str__(self):
         return f'{self.movie} ({self.person}, {self.person_role})'
@@ -156,6 +156,7 @@ class MovieGenres(models.Model):
         verbose_name = _('movie genre')
         verbose_name_plural = _('movie genres')
         db_table = 'content"."movie_genres'
+        default_related_name = 'moviegenresrel'
 
     def __str__(self):
         return f'{self.movie} ({self.genre})'

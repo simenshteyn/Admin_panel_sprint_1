@@ -10,6 +10,7 @@ class GenresSerializer(serializers.RelatedField):
 
     class Meta:
         model = Genres
+        ordering = ['-id']
 
 
 class MoviesSerializer(ModelSerializer):
@@ -36,3 +37,4 @@ class MoviesSerializer(ModelSerializer):
                   'directors',
                   'writers',
                   ]
+        read_only_fields = fields
