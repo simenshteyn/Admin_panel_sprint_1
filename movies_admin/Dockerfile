@@ -1,6 +1,6 @@
 FROM python:3-alpine
 
-ADD requirements.txt /app/requirements.txt
+ADD ./movies_admin/requirements.txt /app/requirements.txt
 
 RUN apk add --no-cache bash
 
@@ -17,7 +17,7 @@ RUN set -ex \
     && apk add --virtual rendeps $runDeps \
     && apk del .build-deps
 
-ADD . /app
+ADD ./movies_admin /app
 WORKDIR /app
 
 ENV VIRTUAL_ENV /env

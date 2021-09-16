@@ -1,14 +1,25 @@
 version: '3'
 services:
-  web:
+  pg_db:
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=yandex01
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=movies
+    build:
+      context: .
+      dockerfile: ./schema_design/Dockerfile
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
+  django_app:
+    restart: always
+    environment:
+      - DJANGO_SECRET_KEY=django-insecure-lr@9d+f4v9*wr&%%#-o(@-l6-(+4%l8w7=xw#k1n0@-p!vbexh
+      - DB_PASSWORD=yandex01
+      - DB_USER=postgres
+      - DB_NAME=movies
     build:
       context: .
       dockerfile: ./movies_admin/Dockerfile
     ports:
       - "8000:8000"
-  db:
-    build:
-      context: .
-      dockerfile: ./schema_design/Dockerfile
-    ports:
-      - "5432:5432"
