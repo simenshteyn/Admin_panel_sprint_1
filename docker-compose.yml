@@ -1,6 +1,8 @@
 version: '3'
 services:
   pg_db:
+    volumes:
+      - postgres_data:/var/lib/postgresql/data/
     restart: always
     environment:
       - POSTGRES_PASSWORD=yandex01
@@ -9,10 +11,13 @@ services:
     build:
       context: .
       dockerfile: ./schema_design/Dockerfile
-    ports:
-      - ${POSTGRES_PORT:-5432}:5432
+    expose:
+      - 5432
+
 
   django_app:
+    volumes:
+      - static_volume:/app/static
     command: >
       sh -c "python manage.py migrate admin &&
              python manage.py migrate auth &&
@@ -25,7 +30,7 @@ services:
              rm load_data.py &&
              gunicorn --bind :8000 --workers 2 config.wsgi:application"
     environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - DJANGO_SETTINGS_MODULE=config.settings.prod
       - DJANGO_SECRET_KEY=somesecretkeyishere
       - DJANGO_SUPERUSER_USERNAME=simenshteyn
       - DJANGO_SUPERUSER_EMAIL=simenshteyn@gmail.com
@@ -38,7 +43,22 @@ services:
     build:
       context: .
       dockerfile: ./movies_admin/Dockerfile
-    ports:
-      - "8000:8000"
     depends_on:
       - pg_db
+    expose:
+      - 8000
+
+  nginx:
+    volumes:
+      - static_volume:/home/app/static
+    build:
+      context: .
+      dockerfile: ./nginx/Dockerfile
+    ports:
+      - 80:80
+    depends_on:
+      - django_app
+
+volumes:
+  static_volume:
+  postgres_data:

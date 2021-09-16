@@ -25,5 +25,3 @@ WORKDIR /app
 
 ENV VIRTUAL_ENV /env
 ENV PATH /env/bin:$PATH
-
-EXPOSE 8000
