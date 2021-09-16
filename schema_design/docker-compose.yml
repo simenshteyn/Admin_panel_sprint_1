@@ -1,0 +1,14 @@
+version: '3'
+
+services:
+  pg_db:
+    restart: always
+    environment:
+      - POSTGRES_PASSWORD=yandex01
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=movies
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    ports:
+      - ${POSTGRES_PORT:-5432}:5432
