@@ -2,6 +2,9 @@ FROM python:3-alpine
 
 ADD ./movies_admin/requirements.txt /app/requirements.txt
 
+ADD ./sqlite_to_postgres/db.sqlite /app/db.sqlite
+ADD ./sqlite_to_postgres/load_data.py /app/load_data.py
+
 RUN apk add --no-cache bash
 
 RUN set -ex \
@@ -24,5 +27,3 @@ ENV VIRTUAL_ENV /env
 ENV PATH /env/bin:$PATH
 
 EXPOSE 8000
-
-CMD ["gunicorn", "--bind", ":8000", "--workers", "3", "config.wsgi:application"]

@@ -11,10 +11,27 @@ services:
       dockerfile: ./schema_design/Dockerfile
     ports:
       - ${POSTGRES_PORT:-5432}:5432
+
   django_app:
-    restart: always
+    command: >
+      sh -c "python manage.py migrate admin &&
+             python manage.py migrate auth &&
+             python manage.py migrate contenttypes &&
+             python manage.py migrate sessions &&
+             python manage.py migrate movies --fake &&
+             python manage.py createsuperuser --noinput &&
+             python load_data.py &&
+             rm db.sqlite &&
+             rm load_data.py &&
+             gunicorn --bind :8000 --workers 2 config.wsgi:application"
     environment:
-      - DJANGO_SECRET_KEY=django-insecure-lr@9d+f4v9*wr&%%#-o(@-l6-(+4%l8w7=xw#k1n0@-p!vbexh
+      - DJANGO_SETTINGS_MODULE=config.settings.dev
+      - DJANGO_SECRET_KEY=somesecretkeyishere
+      - DJANGO_SUPERUSER_USERNAME=simenshteyn
+      - DJANGO_SUPERUSER_EMAIL=simenshteyn@gmail.com
+      - DJANGO_SUPERUSER_PASSWORD=simenshteyn
+      - ALLOWED_HOSTS=127.0.0.1
+      - DB_HOST=pg_db
       - DB_PASSWORD=yandex01
       - DB_USER=postgres
       - DB_NAME=movies
@@ -23,3 +40,5 @@ services:
       dockerfile: ./movies_admin/Dockerfile
     ports:
       - "8000:8000"
+    depends_on:
+      - pg_db
