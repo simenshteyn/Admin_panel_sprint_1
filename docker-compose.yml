@@ -45,6 +45,7 @@ services:
       dockerfile: ./movies_admin/Dockerfile
     depends_on:
       - pg_db
+    stop_signal: SIGINT
     expose:
       - 8000
 
