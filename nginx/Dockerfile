@@ -1,7 +1,7 @@
 FROM nginx:1.21.3-alpine
 
 RUN rm /etc/nginx/conf.d/default.conf
-COPY ./nginx/nginx.conf /etc/nginx/conf.d
+COPY ./nginx/nginx.tmpl /etc/nginx/conf.d
 
 ENV HOME=/home
 ENV APP_HOME=/home/app

@@ -20,6 +20,8 @@ RUN set -ex \
     && apk add --virtual rendeps $runDeps \
     && apk del .build-deps
 
+RUN apk add curl
+
 ADD ./movies_admin /app
 WORKDIR /app
 

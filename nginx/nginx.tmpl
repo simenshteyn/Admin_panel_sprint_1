@@ -1,9 +1,9 @@
 upstream movies {
-    server django_app:8000;
+    server django_app:${DJANGO_APP_PORT};
 }
 
 server {
-    listen 80;
+    listen ${NGINX_PORT};
 
     location / {
         proxy_pass http://movies;

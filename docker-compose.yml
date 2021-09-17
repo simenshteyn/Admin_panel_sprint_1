@@ -1,21 +1,44 @@
 version: '3'
 services:
+
   pg_db:
     volumes:
       - postgres_data:/var/lib/postgresql/data/
-    restart: always
-    environment:
-      - POSTGRES_PASSWORD=yandex01
-      - POSTGRES_USER=postgres
-      - POSTGRES_DB=movies
+    env_file:
+      - ./.env
     build:
       context: .
       dockerfile: ./schema_design/Dockerfile
     expose:
-      - 5432
+      - ${POSTGRES_PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "su postgres", "&&", "pg_isready"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
 
 
   django_app:
+    volumes:
+      - static_volume:/app/static
+    command: gunicorn --bind :${DJANGO_APP_PORT} --workers ${GUNICORN_WORKERS} config.wsgi:application
+    env_file:
+      - ./.env
+    build:
+      context: .
+      dockerfile: ./movies_admin/Dockerfile
+    depends_on:
+      - django_startapp
+    expose:
+      - ${DJANGO_APP_PORT}
+    healthcheck:
+      test: ["CMD-SHELL", "curl", "-f", "http://localhost:8000/admin"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+
+  django_startapp:
     volumes:
       - static_volume:/app/static
     command: >
@@ -27,27 +50,18 @@ services:
              python manage.py createsuperuser --noinput &&
              python load_data.py &&
              rm db.sqlite &&
-             rm load_data.py &&
-             gunicorn --bind :8000 --workers 2 config.wsgi:application"
-    environment:
-      - DJANGO_SETTINGS_MODULE=config.settings.prod
-      - DJANGO_SECRET_KEY=somesecretkeyishere
-      - DJANGO_SUPERUSER_USERNAME=simenshteyn
-      - DJANGO_SUPERUSER_EMAIL=simenshteyn@gmail.com
-      - DJANGO_SUPERUSER_PASSWORD=simenshteyn
-      - ALLOWED_HOSTS=127.0.0.1
-      - DB_HOST=pg_db
-      - DB_PASSWORD=yandex01
-      - DB_USER=postgres
-      - DB_NAME=movies
+             rm load_data.py"
+    env_file:
+      - ./.env
     build:
       context: .
       dockerfile: ./movies_admin/Dockerfile
     depends_on:
-      - pg_db
-    stop_signal: SIGINT
+      pg_db:
+        condition: service_healthy
     expose:
-      - 8000
+      - ${DJANGO_APP_PORT}
+
 
   nginx:
     volumes:
@@ -56,9 +70,16 @@ services:
       context: .
       dockerfile: ./nginx/Dockerfile
     ports:
-      - 80:80
+      - ${NGINX_PORT}:${NGINX_PORT}
+    env_file:
+      - ./.env
     depends_on:
       - django_app
+
+    command: >
+      sh -c "envsubst '$$NGINX_PORT $$DJANGO_APP_PORT' < /etc/nginx/conf.d/nginx.tmpl > /etc/nginx/conf.d/nginx.conf &&
+             nginx -g 'daemon off;'"
+
 
 volumes:
   static_volume:
