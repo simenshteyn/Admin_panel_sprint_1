@@ -1,10 +1,16 @@
-# Greetings traveller
+# Deployment instructions
 
-Мы рады, что вы приступили к выполнению 1 задания из курса middle-python разработчик.
- 
-Описание структуры и порядок выполнения проекта:
-1. `schema_design` - раздел c материалами для новой архитектуры базы данных.
-2. `sqlite_to_postgres` - раздел с материалами по миграции данных.
-3. `movies_admin` - раздел с материалами для панели администратора.
-
-Успехов!
+1. Setup config via variables in `.env` file:\
+``$ vi .env``
+2. First run with auto date migration:\
+`$ docker-compose up --build -d`
+3. Login at site: [http://localhost/admin/](http://localhost/api/v1/movies/)
+4. Explore API at site: [http://localhost/api/v1/movies/](http://localhost/api/v1/movies/)
+5. To stop app run:\
+`$ docker-compose stop`
+6. To star app again run:\
+`$ docker-compose start`
+7. To restart app run:
+`$ docker-compose restart`
+8. To remove app run:
+`$ docker-compose down -v`
